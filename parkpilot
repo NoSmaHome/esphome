@@ -1,0 +1,66 @@
+esphome:
+  name: parkpilot
+  platform: ESP8266
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: "PASSWORD"
+
+wifi:
+  ssid: "WIFI"
+  password: "WIFI-Password"
+  manual_ip:
+    static_ip: IP-Adress
+    gateway: 192.168.178.1
+    subnet: 255.255.255.1
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Mueltonnenueberwachung"
+    password: "PASSWORD"
+
+captive_portal:
+    
+sensor:
+  - platform: ultrasonic
+    trigger_pin: GPIO4
+    echo_pin: GPIO5
+    name: "Garage Auto"
+    update_interval: 1s
+    accuracy_decimals: 2
+    unit_of_measurement: m
+    id: ultrasonic_garage
+    on_value_range:
+        - above: 0.45000 #Wenn weiter weg als 45cm wird die Rundumleuchte ausgeschaltet
+          then:
+            - switch.turn_off: lgarage
+        - below: 0.39000 #Wenn näher als 39cm wird die Rundumleuchte angeschaltet
+          then:
+            - switch.turn_on: lgarage
+
+switch:
+  - platform: gpio
+    name: "Leuchte Garage"
+    id: lgarage
+    pin:
+      number: GPIO2
+      inverted: true
+
+
+
+binary_sensor:
+  - platform: template
+    name: "Auto in Garage"
+    device_class: presence
+    lambda: |-
+      if (id(ultrasonic_garage).state < 1) {
+        return true;
+      } else {
+        return false;
+      }  
